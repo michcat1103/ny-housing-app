@@ -12,9 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ============================================================
-#                       LOAD DATA
-# ============================================================
+# LOAD DATA
 
 @st.cache_data
 def load_data():
@@ -25,9 +23,7 @@ df = load_data()
 # Drop rows missing essential numeric info
 df_clean = df.dropna(subset=["PRICE", "BEDS", "BATH", "PROPERTYSQFT"])
 
-# ============================================================
-#                  SIDEBAR & APP HEADER
-# ============================================================
+# SIDEBAR & APP HEADER
 
 st.sidebar.title("New York Housing Dashboard")
 st.sidebar.markdown(
@@ -36,19 +32,14 @@ st.sidebar.markdown(
 
 st.title("New York Housing Market Analysis")
 
-# ============================================================
-#                   MAP OF ALL LISTINGS
-# ============================================================
+# MAP OF ALL LISTINGS
 
 st.header("Map of All Listings")
 
 map_df = df_clean.dropna(subset=["LATITUDE", "LONGITUDE"])
 st.map(map_df[["LATITUDE", "LONGITUDE"]])
 
-# ============================================================
-#                      QUERY 1
-#   Average price for selected location & show bar chart
-# ============================================================
+# QUERY 1: Average price for selected location & show bar chart
 
 st.header("Query 1: Average Price by Location")
 
@@ -84,10 +75,7 @@ ax1.set_title("Average Home Price by Location")
 plt.xticks(rotation=45)
 st.pyplot(fig1)
 
-# ============================================================
-#                      QUERY 2
-#        Average Price by Bedrooms ($K)
-# ============================================================
+# QUERY 2:  Average Price by Bedrooms ($K)
 
 st.header("Query 2: Average Price Based on Number of Bedrooms")
 
@@ -126,25 +114,14 @@ ax2.ticklabel_format(style='plain', axis='y')
 
 st.pyplot(fig2)
 
-# ============================================================
-#                      QUERY 3
-#    Filter by maximum price + location → map + table
-# ============================================================
+# QUERY 3: Find Homes Under a Selected Price (with outlier fix)
 
 st.header("Query 3: Find Homes Under a Selected Price")
 
-# --- Remove price outliers using IQR ---
-Q1 = df_clean["PRICE"].quantile(0.25)
-Q3 = df_clean["PRICE"].quantile(0.75)
-IQR = Q3 - Q1
+# Remove extreme outliers
+price_cap = df_clean["PRICE"].quantile(0.99)
+df_no_outliers = df_clean[df_clean["PRICE"] <= price_cap]
 
-lower_bound = Q1 - 1.5 * IQR
-upper_bound = Q3 + 1.5 * IQR
-
-df_no_outliers = df_clean[(df_clean["PRICE"] >= lower_bound) & 
-                          (df_clean["PRICE"] <= upper_bound)]
-
-# Slider should now use the cleaned dataset
 min_price = float(df_no_outliers["PRICE"].min())
 max_price = float(df_no_outliers["PRICE"].max())
 
@@ -157,22 +134,21 @@ selected_price = st.slider(
 
 st.write(f"Showing homes under **${selected_price:,.0f}**")
 
-# Location selector
-query3_locations = st.multiselect("Select locations:", locations)
+# Use LOCALITY column (correct name)
+selected_locations = st.multiselect("Select locations:", locations)
 
-# Filter dataset
 q3_df = df_no_outliers[df_no_outliers["PRICE"] <= selected_price]
 
-if query3_locations:
-    q3_df = q3_df[q3_df["LOCATION"].isin(query3_locations)]
+if selected_locations:
+    q3_df = q3_df[q3_df["LOCALITY"].isin(selected_locations)]
 
-# ---------- Show Map ----------
+# ---- MAP ----
 st.subheader("Map of Filtered Homes")
 
 map_q3 = q3_df.dropna(subset=["LATITUDE", "LONGITUDE"])
 st.map(map_q3[["LATITUDE", "LONGITUDE"]])
 
-# ---------- Show Table ----------
+# ---- TABLE ----
 st.subheader("Matching Listings")
 st.write(f"Number of properties: **{len(q3_df)}**")
 
@@ -184,13 +160,11 @@ st.dataframe(table_df[[
     "BEDS",
     "BATH",
     "PROPERTYSQFT",
-    "LOCATION",
+    "LOCALITY",
     "ADDRESS"
 ]])
 
-# ============================================================
-#                 SUMMARY & INSIGHTS
-# ============================================================
+# SUMMARY & INSIGHTS
 
 st.header("Summary & Insights")
 
