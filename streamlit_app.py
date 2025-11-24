@@ -25,9 +25,6 @@ df = load_data()
 # Drop rows missing essential numeric info
 df_clean = df.dropna(subset=["PRICE", "BEDS", "BATH", "PROPERTYSQFT"])
 
-# Rename ADMINISTRATIVE_AREA_LEVEL_2 → LOCATION
-df_clean = df_clean.rename(columns={"ADMINISTRATIVE_AREA_LEVEL_2": "LOCATION"})
-
 # ============================================================
 #                  SIDEBAR & APP HEADER
 # ============================================================
@@ -55,12 +52,12 @@ st.map(map_df[["LATITUDE", "LONGITUDE"]])
 
 st.header("Query 1: Average Price by Location")
 
-locations = sorted(df_clean["LOCATION"].dropna().unique())
+locations = sorted(df_clean["LOCALITY"].dropna().unique())
 
 selected_location = st.selectbox("Select a location:", locations)
 
-# Filter by LOCATION
-q1_df = df_clean[df_clean["LOCATION"] == selected_location]
+# Filter by LOCALITY
+q1_df = df_clean[df_clean["LOCALITY"] == selected_location]
 
 if len(q1_df) > 0:
     avg_price = q1_df["PRICE"].mean()
@@ -77,7 +74,7 @@ else:
 
 st.subheader("Average Price Across All Locations")
 
-avg_prices = df_clean.groupby("LOCATION")["PRICE"].mean().sort_values(ascending=False)
+avg_prices = df_clean.groupby("LOCALITY")["PRICE"].mean().sort_values(ascending=False)
 
 fig1, ax1 = plt.subplots(figsize=(12, 4))
 avg_prices.plot(kind="bar", ax=ax1, color="steelblue")
@@ -99,7 +96,6 @@ Use the slider to choose a maximum number of bedrooms and see how
 the **average home price (in thousands of dollars)** changes.
 """)
 
-# Slider: user chooses max number of bedrooms
 min_beds = int(df_clean["BEDS"].min())
 max_beds = int(df_clean["BEDS"].max())
 
@@ -108,18 +104,18 @@ selected_beds = st.slider(
     min_beds, max_beds, max_beds
 )
 
-# Filter the dataset based on selected bedrooms
+# Filter dataset
 q2_df = df_clean[df_clean["BEDS"] <= selected_beds].copy()
 
 # Convert price to thousands
 q2_df["PRICE_K"] = q2_df["PRICE"] / 1000
 
-# Group by bedrooms and compute average price
+# Group by bedroom count
 avg_price_by_bed = q2_df.groupby("BEDS")["PRICE_K"].mean().sort_index()
 
 st.subheader(f"Average Price (in $1,000s) for Homes With ≤ {selected_beds} Bedrooms")
 
-# ---- PLOT: Bar chart ----
+# ---- Bar Chart ----
 fig2, ax2 = plt.subplots(figsize=(8, 4))
 ax2.bar(avg_price_by_bed.index, avg_price_by_bed.values, color="royalblue")
 
@@ -151,20 +147,19 @@ st.write(f"Showing homes under **${selected_price:,.0f}**")
 
 query3_locations = st.multiselect("Select locations:", locations)
 
+# Apply filters
 q3_df = df_clean[df_clean["PRICE"] <= selected_price]
 
 if query3_locations:
-    q3_df = q3_df[q3_df["LOCATION"].isin(query3_locations)]
+    q3_df = q3_df[q3_df["LOCALITY"].isin(query3_locations)]
 
-# ---------- Show Map ----------
-
+# ---------- Map ----------
 st.subheader("Map of Filtered Homes")
 
 map_q3 = q3_df.dropna(subset=["LATITUDE", "LONGITUDE"])
 st.map(map_q3[["LATITUDE", "LONGITUDE"]])
 
-# ---------- Show Table ----------
-
+# ---------- Table ----------
 st.subheader("Matching Listings")
 st.write(f"Number of properties: **{len(q3_df)}**")
 
@@ -176,7 +171,7 @@ st.dataframe(table_df[[
     "BEDS",
     "BATH",
     "PROPERTYSQFT",
-    "LOCATION",
+    "LOCALITY",
     "ADDRESS"
 ]])
 
