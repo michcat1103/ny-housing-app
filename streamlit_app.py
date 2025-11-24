@@ -72,6 +72,7 @@ avg_prices.plot(kind="bar", ax=ax1, color="steelblue")
 ax1.set_xlabel("Location")
 ax1.set_ylabel("Average Price ($)")
 ax1.set_title("Average Home Price by Location")
+ax1.ticklabel_format(style='plain', axis='y')
 plt.xticks(rotation=45)
 st.pyplot(fig1)
 
