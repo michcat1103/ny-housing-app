@@ -61,7 +61,7 @@ if len(q1_df) > 0:
 else:
     st.write("No listings in this location.")
 
-# ---------- Bar Chart: Average Price for ALL Locations ----------
+# Bar Chart: Average Price for ALL Locations 
 
 st.subheader("Average Price Across All Locations")
 
@@ -76,7 +76,7 @@ ax1.ticklabel_format(style='plain', axis='y')
 plt.xticks(rotation=45)
 st.pyplot(fig1)
 
-# QUERY 2:  Average Price by Bedrooms ($K)
+# QUERY 2: Average Price by Bedrooms ($K)
 
 st.header("Query 2: Average Price Based on Number of Bedrooms")
 
@@ -104,7 +104,7 @@ avg_price_by_bed = q2_df.groupby("BEDS")["PRICE_K"].mean().sort_index()
 
 st.subheader(f"Average Price (in $1,000s) for Homes With ≤ {selected_beds} Bedrooms")
 
-# ---- Bar Chart ----
+# Bar Chart
 fig2, ax2 = plt.subplots(figsize=(8, 4))
 ax2.bar(avg_price_by_bed.index, avg_price_by_bed.values, color="royalblue")
 
