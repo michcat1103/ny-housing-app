@@ -133,8 +133,20 @@ st.pyplot(fig2)
 
 st.header("Query 3: Find Homes Under a Selected Price")
 
-min_price = float(df_clean["PRICE"].min())
-max_price = float(df_clean["PRICE"].max())
+# --- Remove price outliers using IQR ---
+Q1 = df_clean["PRICE"].quantile(0.25)
+Q3 = df_clean["PRICE"].quantile(0.75)
+IQR = Q3 - Q1
+
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+df_no_outliers = df_clean[(df_clean["PRICE"] >= lower_bound) & 
+                          (df_clean["PRICE"] <= upper_bound)]
+
+# Slider should now use the cleaned dataset
+min_price = float(df_no_outliers["PRICE"].min())
+max_price = float(df_no_outliers["PRICE"].max())
 
 selected_price = st.slider(
     "Maximum Price (in dollars):",
@@ -145,21 +157,22 @@ selected_price = st.slider(
 
 st.write(f"Showing homes under **${selected_price:,.0f}**")
 
+# Location selector
 query3_locations = st.multiselect("Select locations:", locations)
 
-# Apply filters
-q3_df = df_clean[df_clean["PRICE"] <= selected_price]
+# Filter dataset
+q3_df = df_no_outliers[df_no_outliers["PRICE"] <= selected_price]
 
 if query3_locations:
-    q3_df = q3_df[q3_df["LOCALITY"].isin(query3_locations)]
+    q3_df = q3_df[q3_df["LOCATION"].isin(query3_locations)]
 
-# ---------- Map ----------
+# ---------- Show Map ----------
 st.subheader("Map of Filtered Homes")
 
 map_q3 = q3_df.dropna(subset=["LATITUDE", "LONGITUDE"])
 st.map(map_q3[["LATITUDE", "LONGITUDE"]])
 
-# ---------- Table ----------
+# ---------- Show Table ----------
 st.subheader("Matching Listings")
 st.write(f"Number of properties: **{len(q3_df)}**")
 
@@ -171,7 +184,7 @@ st.dataframe(table_df[[
     "BEDS",
     "BATH",
     "PROPERTYSQFT",
-    "LOCALITY",
+    "LOCATION",
     "ADDRESS"
 ]])
 
