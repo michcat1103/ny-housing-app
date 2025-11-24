@@ -86,50 +86,63 @@ st.pyplot(fig1)
 
 # ============================================================
 #                      QUERY 2
-#     Bedrooms vs Bathrooms w/ price bubble scatterplot
+#    Bedrooms, Bathrooms, and Price (Improved Visualizations)
 # ============================================================
 
-st.header("Query 2: Compare Bedrooms, Bathrooms, and Price")
+st.header("Query 2: How Do Bedrooms & Bathrooms Relate to Price?")
 
-min_beds = int(df_clean["BEDS"].min())
-max_beds = int(df_clean["BEDS"].max())
+st.write("""
+This section explores whether the number of bedrooms and bathrooms meaningfully 
+affects home prices in New York.  
+To avoid misleading bubble scaling and overlapping points, clearer visualizations 
+(heatmap + boxplot) are used instead of a scatterplot.
+""")
 
-min_bath = int(df_clean["BATH"].min())
-max_bath = int(df_clean["BATH"].max())
+# --- Filter options ---
 
-bed_selection = st.slider("Maximum number of bedrooms:", min_beds, max_beds, min_beds)
-bath_selection = st.slider("Maximum number of bathrooms:", min_bath, max_bath, min_bath)
+bed_options = sorted(df_clean["BEDS"].unique())
+bath_options = sorted(df_clean["BATH"].unique())
+
+selected_beds = st.multiselect("Select bedroom counts:", bed_options, default=bed_options)
+selected_baths = st.multiselect("Select bathroom counts:", bath_options, default=bath_options)
 
 q2_df = df_clean[
-    (df_clean["BEDS"] <= bed_selection) &
-    (df_clean["BATH"] <= bath_selection)
+    df_clean["BEDS"].isin(selected_beds) &
+    df_clean["BATH"].isin(selected_baths)
 ]
 
-# ---------- Scatterplot ----------
+# ============================================================
+#           Visualization 1: Average Price Heatmap
+# ============================================================
 
-st.subheader("Scatterplot: Bedrooms vs Bathrooms sized by Price")
+st.subheader("Average Price Heatmap (Beds × Baths)")
 
-fig2, ax2 = plt.subplots(figsize=(8, 5))
-
-price_scaled = q2_df["PRICE"] / 1_000_000  # scale to millions for bubble size
-
-scatter = ax2.scatter(
-    q2_df["BEDS"],
-    q2_df["BATH"],
-    s=price_scaled * 40,
-    c=price_scaled,
-    alpha=0.6,
-    cmap="Blues"
+heatmap_data = q2_df.pivot_table(
+    values="PRICE",
+    index="BATH",
+    columns="BEDS",
+    aggfunc="mean"
 )
 
-ax2.set_xlabel("Bedrooms")
-ax2.set_ylabel("Bathrooms")
-ax2.set_title("Bedrooms vs Bathrooms (Bubble size = Price in millions)")
+fig_hm, ax_hm = plt.subplots(figsize=(8, 5))
+sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="Blues", ax=ax_hm)
+ax_hm.set_title("Average Price ($) by Bedrooms and Bathrooms")
+ax_hm.set_xlabel("Bedrooms")
+ax_hm.set_ylabel("Bathrooms")
+st.pyplot(fig_hm)
 
-cbar = fig2.colorbar(scatter)
-cbar.set_label("Price (Millions)")
+# ============================================================
+#           Visualization 2: Price Distribution Boxplot
+# ============================================================
 
-st.pyplot(fig2)
+st.subheader("Price Distribution by Number of Bedrooms")
+
+fig_box, ax_box = plt.subplots(figsize=(8, 5))
+sns.boxplot(data=q2_df, x="BEDS", y="PRICE", ax=ax_box, palette="Blues")
+ax_box.set_title("Price Distribution Across Bedroom Counts")
+ax_box.set_xlabel("Bedrooms")
+ax_box.set_ylabel("Price ($)")
+st.pyplot(fig_box)
 
 # ============================================================
 #                      QUERY 3
