@@ -47,17 +47,17 @@ st.map(map_df[["LATITUDE", "LONGITUDE"]])
 
 # ============================================================
 #                      QUERY 1
-#   Average price for selected locality & show bar chart
+#   Average price for selected location & show bar chart
 # ============================================================
 
-st.header("Query 1: Average Price by Locality")
+st.header("Query 1: Average Price by Location")
 
-localities = sorted(df_clean["LOCALITY"].dropna().unique())
+locations = sorted(df_clean["LOCALITY"].dropna().unique())
 
-selected_locality = st.selectbox("Select a locality:", localities)
+selected_locations = st.selectbox("Select a location:", locations)
 
-# Filter for locality
-q1_df = df_clean[df_clean["LOCALITY"] == selected_locality]
+# Filter by location
+q1_df = df_clean[df_clean["LOCATION"] == selected_location]
 
 if len(q1_df) > 0:
     avg_price = q1_df["PRICE"].mean()
@@ -68,49 +68,64 @@ if len(q1_df) > 0:
     st.write(f"Lowest Price: ${min_price:,.0f}")
     st.write(f"Highest Price: ${max_price:,.0f}")
 else:
-    st.write("No listings in this locality.")
+    st.write("No listings in this location.")
 
-# ---------- Bar Chart: Average Price for ALL Localities ----------
+# ---------- Bar Chart: Average Price for ALL Locations ----------
 
-st.subheader("Average Price Across All Localities")
+st.subheader("Average Price Across All Locations")
 
 avg_prices = df_clean.groupby("LOCALITY")["PRICE"].mean().sort_values(ascending=False)
 
 fig1, ax1 = plt.subplots(figsize=(12, 4))
 avg_prices.plot(kind="bar", ax=ax1, color="steelblue")
-ax1.set_xlabel("Locality")
+ax1.set_xlabel("Location")
 ax1.set_ylabel("Average Price ($)")
-ax1.set_title("Average Home Price by Locality")
+ax1.set_title("Average Home Price by Location")
 plt.xticks(rotation=45)
 st.pyplot(fig1)
 
 # ============================================================
 #                      QUERY 2
-#         Bedrooms → Average Price Bar Chart
+#        Average Price by Bedrooms ($K)
 # ============================================================
 
-st.header("Query 2: How Do Bedrooms Affect Home Prices?")
+st.header("Query 2: Average Price Based on Number of Bedrooms")
 
 st.write("""
-This visualization shows how **average home prices change based on the number of bedrooms**.
-A bar chart works better than a scatterplot because bedrooms are discrete categories.
+Use the slider to choose a maximum number of bedrooms and see how 
+the **average home price (in thousands of dollars)** changes.
 """)
 
-# Group by number of bedrooms and compute average price
-avg_bed_price = df_clean.groupby("BEDS")["PRICE"].mean().sort_index()
+# Slider: user chooses max number of bedrooms
+min_beds = int(df_clean["BEDS"].min())
+max_beds = int(df_clean["BEDS"].max())
 
-st.subheader("Average Price by Number of Bedrooms")
+selected_beds = st.slider(
+    "Select maximum number of bedrooms:",
+    min_beds, max_beds, max_beds
+)
 
+# Filter the dataset based on selected bedrooms
+q2_df = df_clean[df_clean["BEDS"] <= selected_beds]
+
+# Convert price to thousands
+q2_df["PRICE_K"] = q2_df["PRICE"] / 1000
+
+# Group by bedrooms and compute average price
+avg_price_by_bed = q2_df.groupby("BEDS")["PRICE_K"].mean().sort_index()
+
+st.subheader(f"Average Price (in $1,000s) for Homes With ≤ {selected_beds} Bedrooms")
+
+# ---- PLOT: Bar chart ----
 fig2, ax2 = plt.subplots(figsize=(8, 4))
-ax2.bar(avg_bed_price.index, avg_bed_price.values, color="steelblue")
+ax2.bar(avg_price_by_bed.index, avg_price_by_bed.values, color="royalblue")
 
 ax2.set_xlabel("Number of Bedrooms")
-ax2.set_ylabel("Average Price ($)")
+ax2.set_ylabel("Average Price ($K)")
 ax2.set_title("Average Home Price by Bedrooms")
-ax2.ticklabel_format(style='plain', axis='y')  # prevents scientific notation
+ax2.ticklabel_format(style='plain', axis='y')
 
 st.pyplot(fig2)
-
 # ============================================================
 #                      QUERY 3
 #    Filter by maximum price + locality → map + table
