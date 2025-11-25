@@ -14,7 +14,6 @@ import seaborn as sns
 
 # LOAD DATA
 
-@st.cache_data
 def load_data():
     return pd.read_excel("NY-House-Dataset.xlsx")
 
@@ -143,13 +142,13 @@ q3_df = df_no_outliers[df_no_outliers["PRICE"] <= selected_price]
 if selected_locations:
     q3_df = q3_df[q3_df["LOCALITY"].isin(selected_locations)]
 
-# ---- MAP ----
+# MAP 
 st.subheader("Map of Filtered Homes")
 
 map_q3 = q3_df.dropna(subset=["LATITUDE", "LONGITUDE"])
 st.map(map_q3[["LATITUDE", "LONGITUDE"]])
 
-# ---- TABLE ----
+# TABLE
 st.subheader("Matching Listings")
 st.write(f"Number of properties: **{len(q3_df)}**")
 
